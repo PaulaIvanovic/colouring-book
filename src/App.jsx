@@ -23,16 +23,6 @@ const VELICINE_KISTA = [10, 20, 30, 45, 60];
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 600;
 
-/* RASPORED (GRID SYSTEM):
-  Definirao sam zone da se oblici ne tuku:
-  Zona 1 (Gore Lijevo): x ~ 150, y ~ 150
-  Zona 2 (Gore Sredina): x ~ 500, y ~ 150
-  Zona 3 (Gore Desno): x ~ 850, y ~ 150
-  Zona 4 (Dolje Lijevo): x ~ 150, y ~ 450
-  Zona 5 (Dolje Sredina): x ~ 500, y ~ 450
-  Zona 6 (Dolje Desno): x ~ 850, y ~ 450
-*/
-
 const OBLICI_DATA = {
   oblici: [
     // --- KRUGOVI ---
@@ -45,7 +35,12 @@ const OBLICI_DATA = {
     { id: 'kvadrat_srednji', ime: 'Srednji Kvadrat', type: 'rect', x: 420, y: 380, w: 160, h: 160 },
     { id: 'kvadrat_veliki', ime: 'Veliki Kvadrat', type: 'rect', x: 750, y: 350, w: 220, h: 220 },
 
-    // --- TROKUTI (Točke su pažljivo izračunate da ne budu preširoki) ---
+    // --- PRAVOKUTNICI ---
+    { id: 'pravokutnik_mali', ime: 'Mali Pravokutnik', type: 'rect', x: 100, y: 400, w: 120, h: 80 },
+    { id: 'pravokutnik_srednji', ime: 'Srednji Pravokutnik', type: 'rect', x: 420, y: 380, w: 180, h: 100 },
+    { id: 'pravokutnik_veliki', ime: 'Veliki Pravokutnik', type: 'rect', x: 750, y: 350, w: 240, h: 140 },
+
+    // --- TROKUTI ---
     { id: 'trokut_mali', ime: 'Mali Trokut', type: 'polygon', points: "150,50 100,150 200,150" }, 
     { id: 'trokut_srednji', ime: 'Srednji Trokut', type: 'polygon', points: "500,50 420,200 580,200" }, 
     { id: 'trokut_veliki', ime: 'Veliki Trokut', type: 'polygon', points: "850,50 730,250 970,250" }, 
@@ -69,15 +64,14 @@ const OBLICI_DATA = {
   ], 
   
   mix: [
-    // --- ZVIJEZDE ---
-    { id: 'zvijezda_mala', ime: 'Mala Zvijezda', type: 'polygon', points: "150,50 135,98 185,58 115,58 165,98" },
-    { id: 'zvijezda_srednja', ime: 'Srednja Zvijezda', type: 'polygon', points: "500,50 460,180 580,80 420,80 540,180" },
-    { id: 'zvijezda_velika', ime: 'Velika Zvijezda', type: 'polygon', points: "850,50 780,250 950,110 750,110 920,250" },
+    // --- KVIZ (TOČNO ZADANI OBLICI) ---
+    { id: 'mix_krug_mali', ime: 'Mali Krug', type: 'circle', cx: 150, cy: 150, r: 50 },
+    { id: 'mix_trokut_srednji', ime: 'Srednji Trokut', type: 'polygon', points: "500,50 420,200 580,200" },
+    { id: 'mix_krug_veliki', ime: 'Veliki Krug', type: 'circle', cx: 850, cy: 150, r: 110 },
     
-    // --- MIX OSTALI ---
-    { id: 'krug_mix', ime: 'Veliki Krug', type: 'circle', cx: 200, cy: 450, r: 100 },
-    { id: 'kvadrat_mix', ime: 'Srednji Kvadrat', type: 'rect', x: 420, y: 380, w: 160, h: 160 },
-    { id: 'trokut_mix', ime: 'Mali Trokut', type: 'polygon', points: "850,350 800,450 900,450" }
+    { id: 'mix_kvadrat_mali', ime: 'Mali Kvadrat', type: 'rect', x: 100, y: 400, w: 100, h: 100 },
+    { id: 'mix_pravokutnik_srednji', ime: 'Srednji Pravokutnik', type: 'rect', x: 420, y: 400, w: 180, h: 100 },
+    { id: 'mix_pravokutnik_veliki', ime: 'Veliki Pravokutnik', type: 'rect', x: 750, y: 380, w: 240, h: 140 }
   ]
 };
 
@@ -110,16 +104,31 @@ function App() {
     setBojeOblika({});
     setEkran('igra');
     setPoruka("");
+
+    // Postavi alat ovisno o tipu igre
+    if (oblikId === 'kviz') {
+      setAlat('kantica');
+      // PROMJENA: Eksplicitno šaljemo 'kviz' kako bi funkcija znala koristiti MIX podatke
+      generirajZadatak('kviz'); 
+    } else {
+      setAlat('kist');
+    }
+
     const canvas = canvasRef.current;
     if(canvas) {
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-    if (oblikId === 'kviz') generirajZadatak();
   };
 
-  const generirajZadatak = () => {
-    const obliciUgrupi = OBLICI_DATA[odabranaKategorija];
+  // PROMJENA: Dodan parametar 'aktivniMod' kako bi znali koji set podataka koristiti
+  const generirajZadatak = (aktivniMod) => {
+    // Ako je argument 'kviz' ili je state već 'kviz', koristi MIX oblike
+    // U suprotnom koristi oblike iz odabrane kategorije
+    const jeKviz = aktivniMod === 'kviz' || odabraniOblik === 'kviz';
+    
+    const obliciUgrupi = jeKviz ? OBLICI_DATA['mix'] : OBLICI_DATA[odabranaKategorija];
+    
     const randomOblik = obliciUgrupi[Math.floor(Math.random() * obliciUgrupi.length)];
     setZadatak({ oblikId: randomOblik.id, boja: '#0000FF', imeBoje: 'PLAVO' });
     setPoruka(`Oboji ${randomOblik.ime} u ${'PLAVO'}`);
@@ -153,14 +162,19 @@ function App() {
     const ctx = canvas.getContext('2d');
     ctx.beginPath();
     ctx.moveTo(offsetX, offsetY);
-    
-    // Gumica crta bijelo
-    ctx.lineWidth = alat === 'gumica' ? velicina * 2 : velicina;
-    ctx.strokeStyle = alat === 'gumica' ? '#FFFFFF' : boja; 
-    ctx.globalCompositeOperation = 'source-over';
-    
+
+    ctx.lineWidth = velicina;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    if (alat === 'gumica') {
+      ctx.globalCompositeOperation = 'destination-out'; 
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = boja;
+    }
+
     isDrawing.current = true;
   };
 
@@ -183,10 +197,17 @@ function App() {
         ctx.closePath();
         isDrawing.current = false;
     }
+    ctx.globalCompositeOperation = 'source-over';
   };
 
   const renderOblici = (zaObrub) => {
-    return OBLICI_DATA[odabranaKategorija].map(oblik => {
+    // PROMJENA: Određivanje koji dataset koristiti za renderiranje
+    // Ako je KVIZ, uvijek koristi 'mix', inače koristi odabranu kategoriju
+    const dataset = (odabraniOblik === 'kviz') 
+        ? OBLICI_DATA['mix'] 
+        : OBLICI_DATA[odabranaKategorija];
+
+    return dataset.map(oblik => {
         if(odabraniOblik !== 'kviz') {
             const baseType = oblik.ime.split(' ')[1];
             const selectedType = OBLICI_DATA[odabranaKategorija].find(o => o.id === odabraniOblik)?.ime.split(' ')[1];
@@ -199,7 +220,6 @@ function App() {
             fill: bojeOblika[oblik.id] || 'white', 
             stroke: 'none', 
             cursor: alat === 'kantica' ? 'pointer' : 'default',
-            // OVO JE BITNO: Osigurava da oblik hvata klikove
             pointerEvents: 'all' 
         };
 
@@ -276,32 +296,39 @@ function App() {
             <div className="game-layout">
                 <div className="sidebar">
                     <div className="tools">
-                        <button className={`tool-btn ${alat === 'kist' ? 'active' : ''}`} onClick={() => setAlat('kist')}>
-                            <IconKist /> <span>Kist</span>
-                        </button>
+                      {odabraniOblik === 'kviz' ? (
                         <button className={`tool-btn ${alat === 'kantica' ? 'active' : ''}`} onClick={() => setAlat('kantica')}>
-                            <IconKantica /> <span>Kantica</span>
+                        <IconKantica /> <span>Kantica</span>
+                        </button>
+                      ) : (
+                        <>
+                        <button className={`tool-btn ${alat === 'kist' ? 'active' : ''}`} onClick={() => setAlat('kist')}>
+                        <IconKist /> <span>Kist</span>
                         </button>
                         <button className={`tool-btn ${alat === 'gumica' ? 'active' : ''}`} onClick={() => setAlat('gumica')}>
-                            <IconGumica /> <span>Gumica</span>
+                        <IconGumica /> <span>Gumica</span>
                         </button>
+                        </>
+                      )}
                     </div>
 
-                    {(alat === 'kist' || alat === 'gumica') && (
-                        <div className="size-selector">
-                            <p>Veličina:</p>
-                            <div className="size-circles">
-                                {VELICINE_KISTA.map(vel => (
-                                    <div 
-                                        key={vel}
-                                        className={`size-circle ${velicina === vel ? 'selected' : ''}`}
-                                        style={{ width: (vel/2) + 10, height: (vel/2) + 10 }} 
-                                        onClick={() => setVelicina(vel)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+
+                   {(odabraniOblik !== 'kviz' && (alat === 'kist' || alat === 'gumica')) && (
+    <div className="size-selector">
+        <p>Veličina:</p>
+        <div className="size-circles">
+            {VELICINE_KISTA.map(vel => (
+                <div 
+                    key={vel}
+                    className={`size-circle ${velicina === vel ? 'selected' : ''}`}
+                    style={{ width: (vel/2) + 10, height: (vel/2) + 10 }} 
+                    onClick={() => setVelicina(vel)}
+                />
+            ))}
+        </div>
+    </div>
+)}
+
 
                     <div className="colors">
                         {BOJE.map(b => (
@@ -318,7 +345,6 @@ function App() {
                         </svg>
                         
                         {/* SLOJ 2: CRTEŽI */}
-                        {/* pointerEvents: none osigurava da klikovi prolaze kroz canvas ako je kantica! */}
                         <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="layer-stacked drawing-canvas"
                             style={{ pointerEvents: (alat === 'kantica') ? 'none' : 'auto' }}
                             onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
