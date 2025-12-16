@@ -66,16 +66,18 @@ const OBLICI_DATA = {
   mix: [
     // --- KVIZ (TOČNO ZADANI OBLICI) ---
     { id: 'mix_krug_mali', ime: 'Mali Krug', type: 'circle', cx: 150, cy: 150, r: 50 },
-    { id: 'mix_trokut_srednji', ime: 'Srednji Trokut', type: 'polygon', points: "500,50 420,200 580,200" },
+    { id: 'mix_trokut_srednji', ime: 'Trokut', type: 'polygon', points: "500,50 420,200 580,200" },
     { id: 'mix_krug_veliki', ime: 'Veliki Krug', type: 'circle', cx: 850, cy: 150, r: 110 },
     
-    { id: 'mix_kvadrat_mali', ime: 'Mali Kvadrat', type: 'rect', x: 100, y: 400, w: 100, h: 100 },
-    { id: 'mix_pravokutnik_srednji', ime: 'Srednji Pravokutnik', type: 'rect', x: 420, y: 400, w: 180, h: 100 },
+    { id: 'mix_kvadrat_mali', ime: 'Kvadrat', type: 'rect', x: 100, y: 400, w: 100, h: 100 },
+    { id: 'mix_pravokutnik_srednji', ime: 'Mali Pravokutnik', type: 'rect', x: 420, y: 400, w: 180, h: 100 },
     { id: 'mix_pravokutnik_veliki', ime: 'Veliki Pravokutnik', type: 'rect', x: 750, y: 380, w: 240, h: 140 }
   ]
 };
 
-const BOJE = ['#FF0000', '#0000FF', '#008000', '#FFFF00', '#FFA500', '#800080', '#000000', '#FFFFFF'];
+const BOJE = ['#FF0000', '#0000FF', '#008000', '#FFFF00', '#FFA500', '#800080', '#774300ff', '#e90ec4ff'];
+const IMENA_BOJA = ['CRVENO', 'PLAVO', 'ZELENO', 'ŽUTO', 'NARANČASTO', 'LJUBIČASTO', 'SMEĐE', 'ROZO'];
+const kvizOblici = [0, 0, 0, 0, 0, 0]; // Indeksi oblika za kviz (mali krug, srednji trokut, veliki krug, mali kvadrat, srednji pravokutnik, veliki pravokutnik)
 
 function App() {
   const [ekran, setEkran] = useState('pocetna');
@@ -85,18 +87,29 @@ function App() {
   const [boja, setBoja] = useState('#FF0000');
   const [velicina, setVelicina] = useState(20);
   const [bojeOblika, setBojeOblika] = useState({});
-  const [poruka, setPoruka] = useState("");
+  const [poruka, setPoruka] = useState(null);
   const [zadatak, setZadatak] = useState(null);
+  const [score, setScore] = useState(0);
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
 
   // Navigacija
   const idiNaKategorije = () => setEkran('kategorije');
-  const odaberiKategoriju = (katId) => { setOdabranaKategorija(katId); setEkran('odabir'); };
+  const odaberiKategoriju = (katId) => {
+  if (katId === 'oblici') {
+    setOdabranaKategorija(katId);
+    setEkran('odabir');
+  } else {
+    setEkran('uskoro');
+  }
+};
+
   const povratak = () => {
     if (ekran === 'igra') setEkran('odabir');
     else if (ekran === 'odabir') setEkran('kategorije');
     else if (ekran === 'kategorije') setEkran('pocetna');
+    else if (ekran === 'uskoro') setEkran('kategorije');
+
   };
 
   const pokreniIgru = (oblikId) => {
@@ -108,6 +121,7 @@ function App() {
     // Postavi alat ovisno o tipu igre
     if (oblikId === 'kviz') {
       setAlat('kantica');
+      setScore(0);
       // PROMJENA: Eksplicitno šaljemo 'kviz' kako bi funkcija znala koristiti MIX podatke
       generirajZadatak('kviz'); 
     } else {
@@ -128,10 +142,22 @@ function App() {
     const jeKviz = aktivniMod === 'kviz' || odabraniOblik === 'kviz';
     
     const obliciUgrupi = jeKviz ? OBLICI_DATA['mix'] : OBLICI_DATA[odabranaKategorija];
-    
+
     const randomOblik = obliciUgrupi[Math.floor(Math.random() * obliciUgrupi.length)];
-    setZadatak({ oblikId: randomOblik.id, boja: '#0000FF', imeBoje: 'PLAVO' });
-    setPoruka(`Oboji ${randomOblik.ime} u ${'PLAVO'}`);
+    
+    const randomIndex = Math.floor(Math.random() * BOJE.length);
+    const randomBoja = BOJE[randomIndex];
+    setZadatak({ oblikId: randomOblik.id, boja: randomBoja, imeBoje: IMENA_BOJA[randomIndex] });
+    //setPoruka(`Oboji ${randomOblik.ime} u ${IMENA_BOJA[randomIndex]}`);
+    setPoruka(
+  <span>
+    Oboji <strong>{randomOblik.ime}</strong> u{" "}
+    <span style={{ color: BOJE[randomIndex], fontWeight: "bold" }}>
+      {IMENA_BOJA[randomIndex]}
+    </span>
+  </span>
+);
+
   };
 
   const klikNaOblik = (idOblika) => {
@@ -141,11 +167,12 @@ function App() {
 
       if (odabraniOblik === 'kviz' && zadatak) {
         if (idOblika === zadatak.oblikId && novaBoja === zadatak.boja) {
+          setScore(prev => prev + 1); // ✅ +1 BOD
           setPoruka("TOČNO! BRAVO! 🎉");
           setTimeout(() => { generirajZadatak(); }, 2000);
-        } else if (idOblika === zadatak.oblikId && novaBoja !== zadatak.boja) {
+        }/* else if (idOblika === zadatak.oblikId && novaBoja !== zadatak.boja) {
            setPoruka("Skoro! Pokušaj drugu boju.");
-        }
+        }*/
       }
     }
   };
@@ -191,14 +218,15 @@ function App() {
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
-    if(isDrawing.current) {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.closePath();
-        isDrawing.current = false;
-    }
+const stopDrawing = () => {
+  if(isDrawing.current) {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.closePath();
     ctx.globalCompositeOperation = 'source-over';
-  };
+    isDrawing.current = false;
+  }
+};
+
 
   const renderOblici = (zaObrub) => {
     // PROMJENA: Određivanje koji dataset koristiti za renderiranje
@@ -278,6 +306,23 @@ function App() {
           </div>
         </div>
       )}
+      {ekran === 'uskoro' && (
+  <div className="screen coming-soon-screen">
+    <button className="btn-back-global" onClick={povratak}>⬅ Natrag</button>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '80vh',
+      fontSize: '40px',
+      fontWeight: 'bold',
+      opacity: 0.7
+    }}>
+      STIŽE USKORO ⏳
+    </div>
+  </div>
+)}
+
 
       {ekran === 'igra' && (
         <div className="screen game-screen">
@@ -285,7 +330,7 @@ function App() {
                 <button className="btn-back-game" onClick={povratak}>⬅ Natrag</button>
                 <div className="game-title-container">
                     {odabraniOblik === 'kviz' ? (
-                        <h2 style={{color: poruka.includes('TOČNO') ? 'green' : 'black'}}>{poruka}</h2>
+                        <h2>{poruka}</h2>
                     ) : (
                         <h2>Bojanje: Slobodan stil</h2>
                     )}
@@ -335,7 +380,19 @@ function App() {
                             <div key={b} className="color-box" style={{backgroundColor: b, border: boja === b ? '4px solid black' : 'none'}} onClick={() => setBoja(b)} />
                         ))}
                     </div>
+                                    {odabraniOblik === 'kviz' && (
+  <div style={{
+    marginTop: '20px',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    textAlign: 'center'
+  }}>
+    Osvojeni bodovi: {score}
+  </div>
+)}
                 </div>
+
+
 
                 <div className="canvas-area-wrapper">
                     <div className="canvas-stack">
