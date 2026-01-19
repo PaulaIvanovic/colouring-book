@@ -1,0 +1,2 @@
+export const COLORS = ["#FF0000", "#0000FF", "#008000", "#FFFF00", "#FFA500", "#800080", "#774300", "#E90EC4"];
+export const COLOR_NAMES = ["CRVENO", "PLAVO", "ZELENO", "ŽUTO", "NARANČASTO", "LJUBIČASTO", "SMEĐE", "ROZO"];
