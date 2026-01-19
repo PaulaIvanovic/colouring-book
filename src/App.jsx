@@ -9,6 +9,7 @@ import { ColorPalette } from "./components/ColorPalette";
 import { DwellPressable } from "./components/DwellPressable";
 import { useFeedback } from "./hooks/useFeedback";
 import { applyClipPath } from "./utils/canvasPath";
+import { hitTestShape } from "./utils/hitTest";
 import { PaintBrushIcon, EraserIcon, PaintBucketIcon } from "@phosphor-icons/react";
 
 
@@ -42,6 +43,9 @@ export default function App() {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
 
+  const downPosRef = useRef(null);
+  const movedRef = useRef(false);
+
   // feedback
   const { feedback, correct, wrong } = useFeedback();
 
@@ -66,9 +70,7 @@ export default function App() {
   }
 
   function goCategories() {
-    //setScreen("kategorije");
-    setCategoryId("oblici");
-    setScreen("odabir");
+    setScreen("kategorije");
   }
 
   function chooseCategory(id) {
@@ -149,6 +151,55 @@ export default function App() {
     setScreen("igra");
   }
 
+  function canvasToWorld(e) {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    return { x, y };
+  }
+
+  function onCanvasPointerDown(e) {
+    if (tool === "kantica") return;
+
+    movedRef.current = false;
+    downPosRef.current = { clientX: e.clientX, clientY: e.clientY };
+
+    startDrawing({ nativeEvent: e });
+  }
+
+  function onCanvasPointerMove(e) {
+    if (!downPosRef.current) return;
+
+    const dx = e.clientX - downPosRef.current.clientX;
+    const dy = e.clientY - downPosRef.current.clientY;
+    if (dx * dx + dy * dy > 6 * 6) movedRef.current = true;
+
+    draw({ nativeEvent: e });
+  }
+
+  function onCanvasPointerUp(e) {
+    stopDrawing();
+    const down = downPosRef.current;
+    downPosRef.current = null;
+
+    if (tool === "gumica" && down && movedRef.current === false) {
+      const { x, y } = canvasToWorld(e);
+
+      const shapes = gameShapes;
+      const hit = [...shapes].reverse().find((s) => hitTestShape(x, y, s));
+      if (hit) {
+        setFillById((prev) => {
+          const next = { ...prev };
+          delete next[hit.id];
+          return next;
+        });
+      }
+    }
+  }
+
   function restoreInstructionAfterWrong() {
     if (!task) return;
     const instruction = makeInstructionNode(task.shapeName, task.color, task.colorName);
@@ -165,9 +216,7 @@ export default function App() {
       restoreInstructionAfterWrong();
     }, 1500);
 
-    // keep the big status briefly even if instruction restores
     setTimeout(() => {
-      // if not already replaced by a new task
       if (kind === "wrong") {
         setCenterMessage((prev) => (prev === text ? null : prev));
         restoreInstructionAfterWrong();
@@ -180,21 +229,26 @@ export default function App() {
     const isVehicle = categoryId === "prijevozna";
 
     if (tool === "gumica") {
-
       setFillById((prev) => {
         const next = { ...prev };
         delete next[shapeId];
         return next;
       });
+
+      if (isVehicle) setSelectedPartId(shapeId);
+
       return;
     }
 
-    if (isVehicle && (tool === "kist" || tool === "gumica")) {
+    if (tool === "kantica") {
+      setFillById((prev) => ({ ...prev, [shapeId]: color }));
+      return;
+    }
+
+    if (isVehicle && tool === "kist") {
       setSelectedPartId(shapeId);
       return;
     }
-
-    setFillById((prev) => ({ ...prev, [shapeId]: color }));
 
     if (mode !== "quiz" || !task) return;
 
@@ -214,7 +268,6 @@ export default function App() {
     } else {
       wrong();
 
-      // undo wrong fill on that shape
       setFillById((prev) => {
         const next = { ...prev };
         delete next[shapeId];
@@ -504,10 +557,10 @@ export default function App() {
                   height={CANVAS_HEIGHT}
                   className="layer-stacked drawing-canvas"
                   style={{ pointerEvents: tool === "kantica" ? "none" : "auto" }}
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
+                  onPointerDown={onCanvasPointerDown}
+                  onPointerMove={onCanvasPointerMove}
+                  onPointerUp={onCanvasPointerUp}
+                  onPointerLeave={onCanvasPointerUp}
                 />
 
                 <ShapeBoard

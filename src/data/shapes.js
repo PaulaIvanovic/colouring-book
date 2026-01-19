@@ -47,14 +47,12 @@ export const VEHICLES = {
     title: "Auto",
     emoji: "🚗",
     shapes: [
-      { id: "car_body", type: "rect", x: 260, y: 320, w: 480, h: 120 },
-      { id: "car_roof", type: "polygon", points: "360,320 460,250 620,250 700,320" },
-
-      { id: "car_window1", type: "rect", x: 430, y: 270, w: 90, h: 45 },
-      { id: "car_window2", type: "rect", x: 545, y: 270, w: 110, h: 45 },
-
-      { id: "car_wheel1", type: "circle", cx: 360, cy: 450, r: 45 },
-      { id: "car_wheel2", type: "circle", cx: 660, cy: 450, r: 45 },
+      { id: "car_body", type: "rect", x: 260, y: 320, w: 480, h: 110 },
+      { id: "car_roof", type: "polygon", points: "340,320 430,250 630,250 700,320" },
+      { id: "car_window1", type: "rect", x: 450, y: 278, w: 85, h: 42 },
+      { id: "car_window2", type: "rect", x: 545, y: 278, w: 95, h: 42 },
+      { id: "car_wheel1", type: "circle", cx: 360, cy: 472, r: 42 },
+      { id: "car_wheel2", type: "circle", cx: 660, cy: 472, r: 42 },
     ],
   },
 
@@ -63,13 +61,13 @@ export const VEHICLES = {
     title: "Kamion",
     emoji: "🚚",
     shapes: [
-      { id: "truck_trailer", type: "rect", x: 190, y: 260, w: 520, h: 180 },
-      { id: "truck_cabin", type: "rect", x: 720, y: 300, w: 160, h: 140 },
-      { id: "truck_windshield", type: "rect", x: 750, y: 320, w: 80, h: 55 },
-
-      { id: "truck_wheel1", type: "circle", cx: 310, cy: 470, r: 45 },
-      { id: "truck_wheel2", type: "circle", cx: 500, cy: 470, r: 45 },
-      { id: "truck_wheel3", type: "circle", cx: 760, cy: 470, r: 45 },
+      { id: "truck_trailer", type: "rect", x: 190, y: 265, w: 500, h: 165 },
+      { id: "truck_cabin", type: "rect", x: 710, y: 305, w: 190, h: 125 },
+      { id: "truck_windshield", type: "rect", x: 740, y: 320, w: 85, h: 52 },
+      { id: "truck_sidewin", type: "rect", x: 835, y: 320, w: 45, h: 52 },
+      { id: "truck_wheel1", type: "circle", cx: 300, cy: 472, r: 42 },
+      { id: "truck_wheel2", type: "circle", cx: 470, cy: 472, r: 42 },
+      { id: "truck_wheel3", type: "circle", cx: 740, cy: 472, r: 42 },
     ],
   },
 
@@ -78,16 +76,15 @@ export const VEHICLES = {
     title: "Autobus",
     emoji: "🚌",
     shapes: [
-      { id: "bus_body", type: "rect", x: 180, y: 260, w: 700, h: 210 },
-
-      { id: "bus_win1", type: "rect", x: 230, y: 300, w: 90, h: 60 },
-      { id: "bus_win2", type: "rect", x: 340, y: 300, w: 90, h: 60 },
-      { id: "bus_win3", type: "rect", x: 450, y: 300, w: 90, h: 60 },
-      { id: "bus_win4", type: "rect", x: 560, y: 300, w: 90, h: 60 },
-      { id: "bus_door", type: "rect", x: 760, y: 300, w: 80, h: 160 },
-
-      { id: "bus_wheel1", type: "circle", cx: 330, cy: 490, r: 45 },
-      { id: "bus_wheel2", type: "circle", cx: 720, cy: 490, r: 45 },
+      { id: "bus_body", type: "rect", x: 170, y: 265, w: 720, h: 185 },
+      { id: "bus_win1", type: "rect", x: 210, y: 295, w: 95, h: 60 },
+      { id: "bus_win2", type: "rect", x: 320, y: 295, w: 95, h: 60 },
+      { id: "bus_win3", type: "rect", x: 430, y: 295, w: 95, h: 60 },
+      { id: "bus_win4", type: "rect", x: 540, y: 295, w: 95, h: 60 },
+      { id: "bus_win5", type: "rect", x: 650, y: 295, w: 95, h: 60 },
+      { id: "bus_door", type: "rect", x: 780, y: 300, w: 75, h: 140 },
+      { id: "bus_wheel1", type: "circle", cx: 310, cy: 492, r: 42 },
+      { id: "bus_wheel2", type: "circle", cx: 730, cy: 492, r: 42 },
     ],
   },
 };
