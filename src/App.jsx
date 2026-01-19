@@ -2,7 +2,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import "./App.css";
 
-import { CATEGORIES, SHAPES, CANVAS_HEIGHT, CANVAS_WIDTH, BRUSH_SIZES } from "./data/shapes";
+import { CATEGORIES, SHAPES, VEHICLES, CANVAS_HEIGHT, CANVAS_WIDTH, BRUSH_SIZES } from "./data/shapes";
 import { COLORS, COLOR_NAMES } from "./data/palette";
 import { ShapeBoard } from "./components/ShapeBoard";
 import { ColorPalette } from "./components/ColorPalette";
