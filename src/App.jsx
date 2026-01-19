@@ -30,7 +30,6 @@ export default function App() {
 
   const [vehicleId, setVehicleId] = useState(null);
   const [selectedPartId, setSelectedPartId] = useState(null);
-  const isVehicle = categoryId === "prijevozna";
   // quiz
   const [task, setTask] = useState(null); // { shapeId, shapeName, color, colorName }
   const [headerMessage, setHeaderMessage] = useState(""); // what header shows
@@ -227,6 +226,42 @@ export default function App() {
   function handleActivateShape(shapeId) {
 
     const isVehicle = categoryId === "prijevozna";
+    const isQuiz = mode === "quiz";
+
+    if (isQuiz) {
+      if (tool !== "kantica" || !task) return;
+
+      const isCorrect = shapeId === task.shapeId && color === task.color;
+
+      if (isCorrect) {
+        setFillById((prev) => ({ ...prev, [shapeId]: color }));
+        setScore((s) => s + 1);
+
+        correct(); // your audio/visual
+        //setCenterMessage("✅ TOČNO! BRAVO!");
+        setHeaderMessage("✅ TOČNO! BRAVO!");
+
+        setTimeout(() => {
+          makeTask();
+        }, 850);
+      } else {
+        wrong();
+
+        setFillById((prev) => {
+          const next = { ...prev };
+          delete next[shapeId];
+          return next;
+        });
+        showStatusTemporarily("❌ POKUŠAJ PONOVO", "wrong");
+      }
+
+      return;
+    }
+
+    if (isVehicle && (tool === "kist" || tool === "gumica")) {
+      setSelectedPartId(shapeId);
+      return;
+    }
 
     if (tool === "gumica") {
       setFillById((prev) => {
@@ -234,47 +269,11 @@ export default function App() {
         delete next[shapeId];
         return next;
       });
-
-      if (isVehicle) setSelectedPartId(shapeId);
-
       return;
     }
 
     if (tool === "kantica") {
       setFillById((prev) => ({ ...prev, [shapeId]: color }));
-      return;
-    }
-
-    if (isVehicle && tool === "kist") {
-      setSelectedPartId(shapeId);
-      return;
-    }
-
-    if (mode !== "quiz" || !task) return;
-
-    const isCorrect = shapeId === task.shapeId && color === task.color;
-
-    if (isCorrect) {
-      correct();
-      setScore((s) => s + 1);
-
-      setCenterMessage("✅ TOČNO! BRAVO!");
-      //setHeaderMessage("✅ TOČNO! BRAVO! ✅");
-      if (wrongTimeoutRef.current) clearTimeout(wrongTimeoutRef.current);
-
-      setTimeout(() => {
-        makeTask();
-      }, 850);
-    } else {
-      wrong();
-
-      setFillById((prev) => {
-        const next = { ...prev };
-        delete next[shapeId];
-        return next;
-      });
-
-      showStatusTemporarily("❌ POKUŠAJ PONOVO ❌", "wrong");
     }
   }
 
@@ -341,6 +340,9 @@ export default function App() {
     ctx.restore();
     isDrawing.current = false;
   }
+
+  const isVehicle = categoryId === "prijevozna";
+  const isQuiz = mode === "quiz";
 
   // --- screens ---
   if (screen === "pocetna") {
@@ -546,7 +548,8 @@ export default function App() {
                   shapes={gameShapes}
                   fillById={fillById}
                   outlineOnly={false}
-                  canActivate={tool === "kantica" || tool === "gumica" || isVehicle}
+                  canActivate={
+                    isQuiz ? tool === "kantica" : (tool === "kantica" || isVehicle)                  }
                   onActivateShape={handleActivateShape}
                   dwellMs={DWELL_MS}
                 />
