@@ -8,6 +8,7 @@ import { ShapeBoard } from "./components/ShapeBoard";
 import { ColorPalette } from "./components/ColorPalette";
 import { DwellPressable } from "./components/DwellPressable";
 import { useFeedback } from "./hooks/useFeedback";
+import { applyClipPath } from "./utils/canvasPath";
 import { PaintBrushIcon, EraserIcon, PaintBucketIcon } from "@phosphor-icons/react";
 
 
@@ -26,6 +27,9 @@ export default function App() {
   const [brushSize, setBrushSize] = useState(20);
   const [fillById, setFillById] = useState({});
 
+  const [vehicleId, setVehicleId] = useState(null);
+  const [selectedPartId, setSelectedPartId] = useState(null);
+  const isVehicle = categoryId === "prijevozna";
   // quiz
   const [task, setTask] = useState(null); // { shapeId, shapeName, color, colorName }
   const [headerMessage, setHeaderMessage] = useState(""); // what header shows
@@ -42,15 +46,18 @@ export default function App() {
   const { feedback, correct, wrong } = useFeedback();
 
   const availableKinds = useMemo(() => {
-    if (!categoryId) return [];
-    return [...new Set(SHAPES[categoryId].map((s) => s.kind))];
+    if (categoryId !== "oblici") return [];
+    return [...new Set((SHAPES.oblici ?? []).map((s) => s.kind))];
   }, [categoryId]);
 
   const gameShapes = useMemo(() => {
     if (mode === "quiz") return SHAPES.mix;
-    if (!categoryId) return [];
+    if (categoryId === "prijevozna" && vehicleId) {
+      return VEHICLES[vehicleId].shapes;
+    }
+    if (categoryId !== "oblici") return [];
     return SHAPES[categoryId].filter((s) => s.kind === selectedKind);
-  }, [categoryId, mode, selectedKind]);
+  }, [categoryId, mode, vehicleId, selectedKind]);
 
   function clearCanvas() {
     const canvas = canvasRef.current;
@@ -65,7 +72,7 @@ export default function App() {
   }
 
   function chooseCategory(id) {
-    if (id === "oblici") {
+    if (id === "oblici" || id === "prijevozna") {
       setCategoryId(id);
       setScreen("odabir");
     } else {
@@ -91,6 +98,8 @@ export default function App() {
     setCenterMessage(null);
     clearCanvas();
     setScreen("igra");
+    setVehicleId(null);
+    setSelectedPartId(null);
   }
 
   function makeInstructionNode(shapeName, c, colorName) {
@@ -125,6 +134,19 @@ export default function App() {
     clearCanvas();
     setScreen("igra");
     makeTask();
+    setVehicleId(null);
+    setSelectedPartId(null);
+  }
+
+  function startVehicle(id) {
+    setMode("free");
+    setVehicleId(id);
+    setSelectedKind(null);
+    setSelectedPartId(null);
+    setTool("kist");
+    setFillById({});
+    clearCanvas();
+    setScreen("igra");
   }
 
   function restoreInstructionAfterWrong() {
@@ -155,15 +177,22 @@ export default function App() {
 
   function handleActivateShape(shapeId) {
 
+    const isVehicle = categoryId === "prijevozna";
+
     if (tool === "gumica") {
 
-    setFillById((prev) => {
-      const next = { ...prev };
-      delete next[shapeId];
-      return next;
-    });
-    return;
-  }
+      setFillById((prev) => {
+        const next = { ...prev };
+        delete next[shapeId];
+        return next;
+      });
+      return;
+    }
+
+    if (isVehicle && (tool === "kist" || tool === "gumica")) {
+      setSelectedPartId(shapeId);
+      return;
+    }
 
     setFillById((prev) => ({ ...prev, [shapeId]: color }));
 
@@ -209,6 +238,13 @@ export default function App() {
     const y = (e.nativeEvent.clientY - rect.top) * scaleY;
 
     const ctx = canvas.getContext("2d");
+    ctx.save();
+
+    if (categoryId === "prijevozna" && selectedPartId) {
+      const part = gameShapes.find(s => s.id === selectedPartId);
+      if (part) applyClipPath(ctx, part);
+    }
+
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineWidth = brushSize;
@@ -249,6 +285,7 @@ export default function App() {
     const ctx = canvas.getContext("2d");
     ctx.closePath();
     ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
     isDrawing.current = false;
   }
 
@@ -303,32 +340,53 @@ export default function App() {
 
           <h2>{CATEGORIES.find((c) => c.id === categoryId)?.naslov}</h2>
 
-          <div className="grid-container">
-            {availableKinds.map((k) => (
+          {/* ✅ NEW: conditional selection UI based on category */}
+          {categoryId === "prijevozna" ? (
+            <div className="grid-container">
+              {Object.values(VEHICLES).map((v) => (
+                <DwellPressable
+                  key={v.id}
+                  as="div"
+                  className="item-card"
+                  role="button"
+                  tabIndex={0}
+                  dwellMs={DWELL_MS}
+                  onActivate={() => startVehicle(v.id)}
+                >
+                  <div className="mini-shape">
+                    {v.emoji} {v.title}
+                  </div>
+                </DwellPressable>
+              ))}
+            </div>
+          ) : (
+            <div className="grid-container">
+              {availableKinds.map((k) => (
+                <DwellPressable
+                  key={k}
+                  as="div"
+                  className="item-card"
+                  role="button"
+                  tabIndex={0}
+                  dwellMs={DWELL_MS}
+                  onActivate={() => startGameFree(k)}
+                >
+                  <div className="mini-shape">{k.toUpperCase()}</div>
+                </DwellPressable>
+              ))}
+
               <DwellPressable
-                key={k}
                 as="div"
-                className="item-card"
+                className="item-card quiz-card"
                 role="button"
                 tabIndex={0}
                 dwellMs={DWELL_MS}
-                onActivate={() => startGameFree(k)}
+                onActivate={startQuiz}
               >
-                <div className="mini-shape">{k.toUpperCase()}</div>
+                <div className="mini-shape">⭐ KVIZ</div>
               </DwellPressable>
-            ))}
-
-            <DwellPressable
-              as="div"
-              className="item-card quiz-card"
-              role="button"
-              tabIndex={0}
-              dwellMs={DWELL_MS}
-              onActivate={startQuiz}
-            >
-              <div className="mini-shape">⭐ KVIZ</div>
-            </DwellPressable>
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -428,13 +486,14 @@ export default function App() {
 
             <div className={`canvas-area-wrapper ${feedback ? `flash-${feedback}` : ""}`}>
               <div className="canvas-stack">
+
                 <ShapeBoard
                   width={CANVAS_WIDTH}
                   height={CANVAS_HEIGHT}
                   shapes={gameShapes}
                   fillById={fillById}
                   outlineOnly={false}
-                  canActivate={tool === "kantica" || tool === "gumica"}
+                  canActivate={tool === "kantica" || tool === "gumica" || isVehicle}
                   onActivateShape={handleActivateShape}
                   dwellMs={DWELL_MS}
                 />
