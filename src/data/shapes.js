@@ -5,6 +5,7 @@ export const CATEGORIES = [
   { id: "oblici", naslov: "Geometrijski oblici", img: "🔺" },
   //{ id: "tijela", naslov: "Geometrijska tijela", img: "🧊" },
   //{ id: "mix", naslov: "Tijela i oblici", img: "⭐" },
+  { id: "tijela", naslov: "Geometrijska tijela", img: "🧊" },
   { id: "prijevozna", naslov: "Prijevozna sredstva", img: "🚌" },
 ];
 
@@ -29,6 +30,34 @@ export const SHAPES = {
     { id: "trokut_veliki", ime: "Veliki Trokut", kind: "trokut", type: "polygon", points: "850,50 730,250 970,250" },
   ],
 
+// src/data/shapes.js
+tijela: [
+  { id: "kugla", ime: "Kugla", kind: "kugla", type: "circle", cx: 500, cy: 300, r: 150, is3D: true },
+
+  // Kocka - samo vanjski rub (6 točaka)
+  { id: "kocka", ime: "Kocka", kind: "kocka", type: "polygon", 
+    points: "350,200 450,100 700,100 700,350 600,450 350,450" },
+
+  // Kvadar - samo vanjski rub
+  { id: "kvadar", ime: "Kvadar", kind: "kvadar", type: "polygon", 
+    points: "300,250 400,150 750,150 750,350 650,450 300,450" },
+
+  // Valjak - definiramo ga kao rect, a u ShapeBoard ćemo mu dodati obline
+  // src/data/shapes.js
+// src/data/shapes.js
+// src/data/shapes.js
+{ 
+  id: "valjak", 
+  ime: "Valjak", 
+  kind: "valjak", 
+  type: "path", 
+  // d crta: elipsu na vrhu -> desnu stranicu -> donji luk -> lijevu stranicu
+  d: "M 380,165 a 120,35 0 1,0 240,0 a 120,35 0 1,0 -240,0 M 380,165 L 380,435 Q 500,475 620,435 L 620,165"
+},
+  // Piramida - vanjski rub
+  { id: "piramida", ime: "Piramida", kind: "piramida", type: "polygon", 
+    points: "500,100 750,350 550,480 300,400" },
+],
   // quiz uses mix only
   mix: [
     { id: "mix_krug_mali", ime: "Mali Krug", kind: "krug", type: "circle", cx: 150, cy: 150, r: 50 },

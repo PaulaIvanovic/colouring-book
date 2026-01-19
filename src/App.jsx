@@ -49,8 +49,8 @@ export default function App() {
   const { feedback, correct, wrong } = useFeedback();
 
   const availableKinds = useMemo(() => {
-    if (categoryId !== "oblici") return [];
-    return [...new Set((SHAPES.oblici ?? []).map((s) => s.kind))];
+    if (categoryId !== "oblici" && categoryId !== "tijela") return [];
+    return [...new Set((SHAPES[categoryId] ?? []).map((s) => s.kind))];
   }, [categoryId]);
 
   const gameShapes = useMemo(() => {
@@ -58,8 +58,11 @@ export default function App() {
     if (categoryId === "prijevozna" && vehicleId) {
       return VEHICLES[vehicleId].shapes;
     }
-    if (categoryId !== "oblici") return [];
+    // Ako je kategorija "oblici" ILI "tijela", filtriraj po odabranom 'kind'-u
+  if (categoryId === "oblici" || categoryId === "tijela") {
     return SHAPES[categoryId].filter((s) => s.kind === selectedKind);
+  }
+  return [];
   }, [categoryId, mode, vehicleId, selectedKind]);
 
   function clearCanvas() {
@@ -73,7 +76,7 @@ export default function App() {
   }
 
   function chooseCategory(id) {
-    if (id === "oblici" || id === "prijevozna") {
+    if (id === "oblici" || id === "prijevozna" || id === "tijela") {
       setCategoryId(id);
       setScreen("odabir");
     } else {
@@ -387,7 +390,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === "odabir" && (
+{screen === "odabir" && (
         <div className="screen selection-screen">
           <DwellPressable className="btn-back-global" dwellMs={DWELL_MS} onActivate={back}>
             ⬅ Natrag
@@ -430,16 +433,19 @@ export default function App() {
                 </DwellPressable>
               ))}
 
-              <DwellPressable
-                as="div"
-                className="item-card quiz-card"
-                role="button"
-                tabIndex={0}
-                dwellMs={DWELL_MS}
-                onActivate={startQuiz}
-              >
-                <div className="mini-shape">⭐ KVIZ</div>
-              </DwellPressable>
+              {/* ✅ KVIZ se sada prikazuje SAMO u kategoriji OBLICI */}
+              {categoryId === "oblici" && (
+                <DwellPressable
+                  as="div"
+                  className="item-card quiz-card"
+                  role="button"
+                  tabIndex={0}
+                  dwellMs={DWELL_MS}
+                  onActivate={startQuiz}
+                >
+                  <div className="mini-shape">⭐ KVIZ</div>
+                </DwellPressable>
+              )}
             </div>
           )}
         </div>

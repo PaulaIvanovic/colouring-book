@@ -53,8 +53,8 @@ function ShapeEl({ shape, style, onActivate, dwellMs, enableDwell }) {
         onPointerEnter: dwell.onPointerEnter,
         onPointerLeave: dwell.onPointerLeave,
         onClick: (e) => {
-            e.stopPropagation();
-            dwell.onClick();
+          e.stopPropagation();
+          dwell.onClick();
         },
       }
     : {};
@@ -65,16 +65,58 @@ function ShapeEl({ shape, style, onActivate, dwellMs, enableDwell }) {
   if (shape.type === "circle") shapeEl = <circle {...elProps} cx={shape.cx} cy={shape.cy} r={shape.r} />;
   if (shape.type === "rect") shapeEl = <rect {...elProps} x={shape.x} y={shape.y} width={shape.w} height={shape.h} />;
   if (shape.type === "polygon") shapeEl = <polygon {...elProps} points={shape.points} />;
+  
+// DODAJEMO PATH PODRŠKU ZA VALJAK
+  if (shape.type === "path") shapeEl = <path {...elProps} d={shape.d} />;
+
   if (!shapeEl) return null;
+
+  const lineStroke = "black";
+  const lineWeight = style.strokeWidth || 4;
 
   return (
     <g>
       {shapeEl}
+      
+      {/* 3D DODACI KOJI STOJE PREKO BOJE */}
+      {shape.kind === "kugla" && (
+        <ellipse cx={shape.cx} cy={shape.cy} rx={shape.r} ry={shape.r * 0.3} fill="none" stroke={lineStroke} strokeWidth={lineWeight} pointerEvents="none" />
+      )}
+
+      {shape.kind === "kocka" && (
+        <g fill="none" stroke={lineStroke} strokeWidth={lineWeight} pointerEvents="none">
+          <path d="M 350 200 L 600 200 L 600 450" /> {/* Prednji bridovi */}
+          <line x1="600" y1="200" x2="700" y2="100" /> {/* Kosi brid */}
+        </g>
+      )}
+
+      {shape.kind === "kvadar" && (
+        <g fill="none" stroke={lineStroke} strokeWidth={lineWeight} pointerEvents="none">
+          <path d="M 300 250 L 650 250 L 650 450" />
+          <line x1="650" y1="250" x2="750" y2="150" />
+        </g>
+      )}
+
+      // U ShapeEl komponenti unutar ShapeBoard.jsx
+
+{shape.kind === "valjak" && (
+  <g fill="none" stroke={lineStroke} strokeWidth={lineWeight} pointerEvents="none">
+    {/* Ova linija crta prednji rub gornjeg kruga da se vidi 3D dubina */}
+    <path d="M 380 165 Q 500 200 620 165" />
+  </g>
+)}
+
+      {shape.kind === "piramida" && (
+        <g fill="none" stroke={lineStroke} strokeWidth={lineWeight} pointerEvents="none">
+          <line x1="500" y1="100" x2="550" y2="480" />
+          <path d="M 300 400 L 550 480 L 750 350" stroke={lineStroke} />
+        </g>
+      )}
+
       {enableDwell && dwell.dwelling && <DwellSvgRing cx={cx} cy={cy} progress={dwell.progress} />}
     </g>
   );
 }
-
 export function ShapeBoard({
   width,
   height,
